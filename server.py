@@ -2,6 +2,7 @@ from flask import Flask
 from flask import request
 from flask import jsonify
 import psycopg2
+from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__)
 
@@ -18,7 +19,7 @@ def handlePets():
         conn = psycopg2.connect(
             host="127.0.0.1", port="5432", database="pet_hotel")
         try:
-            cursor = conn.cursor()
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
             queryText = '''
             SELECT "owners"."name" as "owner", "pets"."name" as "pet", "pets"."breed", "pets"."color", "pets"."checked_in", "owners"."id" as "owner_id", "pets"."id" as "pet_id"  
             FROM "pets"
@@ -41,33 +42,38 @@ def handlePets():
                 conn.close()
                 print("PostgreSQL connection is closed")
 
-    # elif request.method == "POST":
-    #     # open database post
-    #     conn = psycopg2.connect(
-    #         host="127.0.0.1", port="5432", database="pet_hotel")
-    #     try:
-    #         # connection = psycopg2.connect(host="127.0.0.1", port="5432", database="pet_hotel")
-    #         cursor = conn.cursor()
-    #         #request.get_json = req.body
-    #         name = 'hello' #request.get_json['name']
-    #         color = 'rainbow' #request.get_json['color']
-    #         breed = 'rare' #request.get_json['breed']
-    #         owner_id = 1 #request.get_json['owner_id']
-    #         queryText = 'INSERT INTO pets ("name", "color", "breed", "owner_id") VALUES (%s, %s, %s, %d);'
-    #         insertData = (name, color, breed, owner_id)
-    #         #execute query (currently hardcoded)
-    #         cursor.execute(queryText, insertData)
-    #         #iffy about next stuff
-    #         conn.commit()
-    #         count = cursor.rowcount
-    #         print(count, 'HEY IF IT POSTED THIS SHOWS')
-    #     except(Exception, psycopg2.Error) as error :
-    #         if(conn):
-    #             print('FAIL', error)
-    #     finally: 
-    #         #closing
-    #         if(conn):
-    #             cursor.close()
-    #             conn.close()
-    #             print('POSTGRESQL CLOSED')
+    elif request.method == "POST":
+        # open database post
+        conn = psycopg2.connect(
+            host="127.0.0.1", port="5432", database="pet_hotel")
+        try:
+            # connection = psycopg2.connect(host="127.0.0.1", port="5432", database="pet_hotel")
+            cursor = conn.cursor()
+            #request.get_json = req.body
+            print(request.get_json())
+            name = request.get_json()['name']
+            color = request.get_json()['color']
+            breed = request.get_json()['breed']
+            owner_id = request.get_json()['owner_id']
+            queryText = '''
+            INSERT INTO pets ("name", "color", "breed", "owner_id") 
+            VALUES (%s, %s, %s, %d)
+            ;'''
+            insertData = (name, color, breed, owner_id)
+            #execute query (currently hardcoded)
+            cursor.execute(queryText, insertData)
+            #iffy about next stuff
+            conn.commit()
+            count = cursor.rowcount
+            print(count, 'Post successful')
+            return 'YOU HAVE POSTED!'
+        except(Exception, psycopg2.Error) as error :
+            if(conn):
+                print('FAIL', error)
+        finally: 
+            #closing
+            if(conn):
+                cursor.close()
+                conn.close()
+                print('POSTGRESQL CLOSED')
 
